@@ -1,0 +1,209 @@
+.sidebar {
+  height: 100%;
+  width: 100%;
+  padding: var(--mantine-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--mantine-spacing-xs);
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--mantine-font-size-sm);
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-dark-0));
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tab {
+  font-size: var(--mantine-font-size-xs);
+  padding: 6px var(--mantine-spacing-xs);
+}
+
+.tabPanel {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: var(--mantine-spacing-xs);
+  min-height: 0;
+}
+
+/* ── Chat list ───────────────────────────────────────────────────────────────── */
+
+.chatList {
+  width: 100%;
+}
+
+/* ── Conversation item ───────────────────────────────────────────────────────── */
+
+.chatItem {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  padding: 7px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+  transition: background-color 120ms;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+
+  @mixin hover {
+    background-color: light-dark(
+      var(--mantine-color-gray-1),
+      var(--mantine-color-dark-6)
+    );
+  }
+
+  &[data-active] {
+    background-color: light-dark(
+      var(--mantine-color-gray-2),
+      var(--mantine-color-dark-5)
+    );
+    color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-white));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+}
+
+.chatItemIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+}
+
+.chatItemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatItemTitle {
+  line-height: 1.3;
+}
+
+.chatItemPreview {
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.chatItemDate {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 10px;
+  margin-top: 2px;
+  transition: opacity 150ms;
+}
+
+.chatItem:hover .chatItemDate,
+.chatItem:focus-within .chatItemDate {
+  opacity: 0;
+}
+
+.chatItemActions {
+  position: absolute;
+  right: var(--mantine-spacing-xs);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 150ms;
+}
+
+.chatItem:hover .chatItemActions,
+.chatItem:focus-within .chatItemActions {
+  opacity: 1;
+}
+
+/* ── Source item ─────────────────────────────────────────────────────────────── */
+
+.sourceItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  padding: 7px var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+  transition: background-color 120ms;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+
+  @mixin hover {
+    background-color: light-dark(
+      var(--mantine-color-gray-1),
+      var(--mantine-color-dark-6)
+    );
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+}
+
+.sourceItemIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: light-dark(var(--mantine-color-blue-5), var(--mantine-color-blue-4));
+}
+
+.sourceItemTitle {
+  color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-blue-4));
+  text-decoration: none;
+  line-height: 1.3;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-md);
+  text-align: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.emptyIcon {
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+  margin-bottom: var(--mantine-spacing-xs);
+}
+
+.emptyTitle {
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-1));
+}
+
+.emptyHint {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+  line-height: 1.4;
+}

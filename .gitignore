@@ -1,0 +1,67 @@
+.env
+.env.dev
+.env.prod
+.env.*
+
+data
+
+# Compiled output
+dist
+/node_modules
+
+# Logs
+logs/
+*.log
+migration.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Nx
+.nx
+.nx/installation
+.nx/cache
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.scrapy/
+
+*.bak
+
+
+
+# Generated knowledge base index
+scripts/zendesk-poc/output/
+scripts/zendesk-poc/output/**
+scripts/zendesk-poc/output/kb_index/
+
+# Python cache
+.pytest_cache/
