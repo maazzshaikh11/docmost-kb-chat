@@ -64,7 +64,8 @@ class KBIndexer:
         # Check title tag
         title_tag = soup.find('title')
         if title_tag:
-            metadata['title'] = title_tag.get_text(strip=True)
+            title_text = title_tag.get_text(" ", strip=True)
+            metadata['title'] = re.sub(r'\s+', ' ', title_text).strip()
         
         # Extract from HTML comments
         for comment in soup.find_all(string=lambda text: isinstance(text, str) and 'Article ID:' in text):
@@ -88,16 +89,19 @@ class KBIndexer:
         
         for element in body.descendants:
             if element.name in ['h1', 'h2', 'h3', 'h4']:
-                heading_text = element.get_text(strip=True)
+                heading_text = element.get_text(" ", strip=True)
+                heading_text = re.sub(r'\s+', ' ', heading_text).strip()
                 if heading_text:
                     headings.append(heading_text)
                     text_parts.append(f"\n\n## {heading_text}\n")
             elif element.name == 'p':
-                para_text = element.get_text(strip=True)
+                para_text = element.get_text(" ", strip=True)
+                para_text = re.sub(r'\s+', ' ', para_text).strip()
                 if para_text:
                     text_parts.append(para_text + "\n")
             elif element.name in ['li']:
-                li_text = element.get_text(strip=True)
+                li_text = element.get_text(" ", strip=True)
+                li_text = re.sub(r'\s+', ' ', li_text).strip()
                 if li_text:
                     text_parts.append(f"- {li_text}\n")
         
@@ -112,62 +116,106 @@ class KBIndexer:
             'headings': headings,
         }
     
-    def chunk_text(self, text: str, metadata: dict, chunk_size: int = 500, overlap: int = 100) -> list[dict]:
+    def chunk_text(self, text: str, metadata: dict, chunk_size: int = 800, overlap: int = 100) -> list[dict]:
         """
-        Chunk text into overlapping segments.
-        Try to break on paragraph/heading boundaries.
+        Chunk text into segments that preserve logical structure.
+        
+        Strategy:
+        1. Split on heading boundaries (## lines)
+        2. Split on FAQ-style questions (lines ending in '?' after blank line)
+        3. Keep numbered procedures and Q&A blocks intact
+        4. Only split within logical blocks if they exceed chunk_size (800 chars)
         """
         if not text:
             return []
         
         chunks = []
+        lines = text.split('\n')
         
-        # Split on double newlines (paragraphs/sections)
-        sections = re.split(r'\n\n+', text)
+        # Identify logical block boundaries
+        logical_blocks = []
+        current_block_lines = []
         
-        current_chunk = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+            
+            # Check if this is a heading boundary (## line)
+            is_heading = stripped.startswith('##')
+            
+            # Check if this is a FAQ-style question (line ending in '?' preceded by blank)
+            is_faq_question = False
+            if stripped.endswith('?') and len(stripped) > 10:
+                # Check if preceded by blank line or is first line
+                if i == 0 or (i > 0 and not lines[i-1].strip()):
+                    is_faq_question = True
+            
+            # If we hit a boundary and have accumulated lines, save the current block
+            if (is_heading or is_faq_question) and current_block_lines:
+                block_text = '\n'.join(current_block_lines).strip()
+                if block_text:
+                    logical_blocks.append(block_text)
+                current_block_lines = []
+            
+            # Add current line to the block
+            current_block_lines.append(line)
+            i += 1
+        
+        # Add remaining block
+        if current_block_lines:
+            block_text = '\n'.join(current_block_lines).strip()
+            if block_text:
+                logical_blocks.append(block_text)
+        
+        # If no logical blocks found (plain text), fall back to paragraph splitting
+        if not logical_blocks or (len(logical_blocks) == 1 and len(logical_blocks[0]) > chunk_size * 2):
+            logical_blocks = [b.strip() for b in re.split(r'\n\n+', text) if b.strip()]
+        
+        # Now process logical blocks into chunks
+        current_chunk_blocks = []
         current_length = 0
         
-        for section in sections:
-            section = section.strip()
-            if not section:
-                continue
+        for block in logical_blocks:
+            block_length = len(block)
             
-            section_length = len(section)
-            
-            # If this section alone exceeds chunk size, split it
-            if section_length > chunk_size:
-                # Save current chunk if any
-                if current_chunk:
-                    chunk_text = '\n\n'.join(current_chunk)
+            # If a single logical block exceeds chunk_size, we need to split it
+            if block_length > chunk_size:
+                # Save current accumulated chunks first
+                if current_chunk_blocks:
+                    chunk_text = '\n\n'.join(current_chunk_blocks)
                     chunks.append({
                         'text': chunk_text,
                         'metadata': metadata.copy(),
                         'char_count': len(chunk_text),
                     })
-                    current_chunk = []
+                    current_chunk_blocks = []
                     current_length = 0
                 
-                # Split long section by sentences
-                sentences = re.split(r'(?<=[.!?])\s+', section)
+                # Split the oversized block by sentences
+                sentences = re.split(r'(?<=[.!?])\s+', block)
                 temp_chunk = []
                 temp_length = 0
                 
                 for sentence in sentences:
-                    if temp_length + len(sentence) > chunk_size and temp_chunk:
+                    sentence_len = len(sentence)
+                    
+                    if temp_length + sentence_len > chunk_size and temp_chunk:
+                        # Save this sentence chunk
                         chunk_text = ' '.join(temp_chunk)
                         chunks.append({
                             'text': chunk_text,
                             'metadata': metadata.copy(),
                             'char_count': len(chunk_text),
                         })
-                        # Keep overlap
+                        # Keep last 2 sentences for overlap
                         temp_chunk = temp_chunk[-2:] if len(temp_chunk) >= 2 else []
-                        temp_length = sum(len(s) for s in temp_chunk)
+                        temp_length = sum(len(s) + 1 for s in temp_chunk)
                     
                     temp_chunk.append(sentence)
-                    temp_length += len(sentence)
+                    temp_length += sentence_len + 1
                 
+                # Save remaining sentences from oversized block
                 if temp_chunk:
                     chunk_text = ' '.join(temp_chunk)
                     chunks.append({
@@ -176,31 +224,27 @@ class KBIndexer:
                         'char_count': len(chunk_text),
                     })
             
-            # Normal case: add section to current chunk
-            elif current_length + section_length > chunk_size and current_chunk:
+            # Normal case: add block to current chunk
+            elif current_length + block_length > chunk_size and current_chunk_blocks:
                 # Save current chunk
-                chunk_text = '\n\n'.join(current_chunk)
+                chunk_text = '\n\n'.join(current_chunk_blocks)
                 chunks.append({
                     'text': chunk_text,
                     'metadata': metadata.copy(),
                     'char_count': len(chunk_text),
                 })
                 
-                # Start new chunk with overlap
-                if overlap > 0 and current_chunk:
-                    # Keep last section for overlap
-                    current_chunk = [current_chunk[-1], section]
-                    current_length = len(current_chunk[-2]) + section_length
-                else:
-                    current_chunk = [section]
-                    current_length = section_length
+                # Start new chunk with this block
+                current_chunk_blocks = [block]
+                current_length = block_length
             else:
-                current_chunk.append(section)
-                current_length += section_length
+                # Add block to current chunk
+                current_chunk_blocks.append(block)
+                current_length += block_length + 2  # +2 for \n\n separator
         
         # Add remaining chunk
-        if current_chunk:
-            chunk_text = '\n\n'.join(current_chunk)
+        if current_chunk_blocks:
+            chunk_text = '\n\n'.join(current_chunk_blocks)
             chunks.append({
                 'text': chunk_text,
                 'metadata': metadata.copy(),
@@ -239,7 +283,7 @@ class KBIndexer:
                 chunks = self.chunk_text(
                     article_data['text'],
                     article_data['metadata'],
-                    chunk_size=500,
+                    chunk_size=800,
                     overlap=100
                 )
                 
