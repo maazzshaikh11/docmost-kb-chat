@@ -108,12 +108,13 @@ export function useKbChatStore(): UseKbChatStore {
   }, []);
 
   const appendUserMessage = useCallback(
-    (content: string): string => {
+    (content: string, conversationId?: string): string => {
       const msgId = generateId();
       const now = new Date().toISOString();
+      const targetId = conversationId ?? activeConversationId;
       setConversations((prev) =>
         prev.map((conv) => {
-          if (conv.id !== activeConversationId) return conv;
+          if (conv.id !== targetId) return conv;
           const isFirst = conv.messages.length === 0;
           const title = isFirst ? content.slice(0, 80) : conv.title;
           return {
@@ -133,12 +134,13 @@ export function useKbChatStore(): UseKbChatStore {
   );
 
   const appendAssistantMessage = useCallback(
-    (content: string, sources: KbSource[]): string => {
+    (content: string, sources: KbSource[], conversationId?: string): string => {
       const msgId = generateId();
       const now = new Date().toISOString();
+      const targetId = conversationId ?? activeConversationId;
       setConversations((prev) =>
         prev.map((conv) => {
-          if (conv.id !== activeConversationId) return conv;
+          if (conv.id !== targetId) return conv;
           return {
             ...conv,
             updatedAt: now,

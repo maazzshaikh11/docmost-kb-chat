@@ -99,12 +99,12 @@ function SourceList({ sources }: { sources: KbSource[] }) {
 function UserMessage({ msg }: { msg: KbMessage }) {
   return (
     <div className={classes.messageRow} data-role="user">
-      <div className={classes.messageBubble} data-role="user">
+      <div className={classes.messageBubble}>
         <Text size="sm" style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
           {msg.content}
         </Text>
       </div>
-      <div className={classes.messageAvatar} data-role="user">
+      <div className={classes.messageAvatar}>
         <IconUser size={14} />
       </div>
     </div>
@@ -130,10 +130,10 @@ function AssistantMessage({ msg }: { msg: KbMessage }) {
 
   return (
     <div className={classes.messageRow} data-role="assistant">
-      <div className={classes.messageAvatar} data-role="assistant">
+      <div className={classes.messageAvatar}>
         <IconRobotFace size={14} />
       </div>
-      <div className={classes.messageBubble} data-role="assistant" onClick={handleCitationClick}>
+      <div className={classes.messageBubble} onClick={handleCitationClick}>
         <Text
           size="sm"
           className={classes.answerText}
@@ -148,10 +148,10 @@ function AssistantMessage({ msg }: { msg: KbMessage }) {
 function StreamingBubble({ content }: { content: string }) {
   return (
     <div className={classes.messageRow} data-role="assistant">
-      <div className={classes.messageAvatar} data-role="assistant">
+      <div className={classes.messageAvatar}>
         <IconRobotFace size={14} />
       </div>
-      <div className={classes.messageBubble} data-role="assistant">
+      <div className={classes.messageBubble}>
         {content ? (
           <Text
             size="sm"
@@ -220,13 +220,14 @@ export default function KbChatPage() {
     setStreamingContent("");
     setIsLoading(true);
 
+    let targetId = activeConversationId;
     // Ensure we have an active conversation
-    if (!activeConversationId) {
-      createConversation();
+    if (!targetId) {
+      targetId = createConversation();
     }
 
     // Append user message immediately
-    appendUserMessage(question);
+    appendUserMessage(question, targetId);
 
     try {
       const response = await sendKbChatMessage({ query: question });
@@ -236,7 +237,7 @@ export default function KbChatPage() {
       const noInfo = hasNoInfo(response.answer);
       const sources = noInfo ? [] : (response.sources ?? []);
 
-      appendAssistantMessage(response.answer, sources);
+      appendAssistantMessage(response.answer, sources, targetId);
     } catch (err: unknown) {
       const e = err as {
         response?: { data?: { message?: string } };
